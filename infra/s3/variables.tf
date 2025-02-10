@@ -1,0 +1,1 @@
+# Define variables for S3 resources if needed 

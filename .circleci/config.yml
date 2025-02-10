@@ -1,0 +1,75 @@
+version: 2.1
+
+orbs:
+  python: circleci/python@2.0.3
+  terraform: circleci/terraform@2.0.3
+
+jobs:
+  lint_and_test:
+    docker:
+      - image: circleci/python:3.9
+    steps:
+      - checkout
+      - run:
+          name: Install Poetry
+          command: curl -sSL https://install.python-poetry.org | python -
+      - run:
+          name: Install Dependencies
+          command: make install_requirements
+      - run:
+          name: Run Linting
+          command: make lint
+      - run:
+          name: Run Tests
+          command: make test
+      - run:
+          name: Security Scan
+          command: bandit -r backend
+
+  build_artifacts:
+    docker:
+      - image: circleci/python:3.9
+    steps:
+      - checkout
+      - run:
+          name: Build Artifacts
+          command: make build_lambdas
+      - persist_to_workspace:
+          root: ~/project
+          paths:
+            - backend/checker/check_emr.zip
+            - backend/monitor/monitor_service.zip
+            - backend/frontservice/app.zip
+
+  deploy:
+    docker:
+      - image: hashicorp/terraform:light
+    steps:
+      - attach_workspace:
+          at: ~/project
+      - run:
+          name: Deploy with Terraform
+          command: make deploy
+
+  build_docs:
+    docker:
+      - image: node:14
+    steps:
+      - checkout
+      - run:
+          name: Install Mintlify CLI
+          command: npm install -g mintlify
+      - run:
+          name: Build Docs
+          command: mintlify build docs
+
+workflows:
+  version: 2
+  build_and_deploy:
+    jobs:
+      - lint_and_test
+      - build_artifacts
+      - deploy
+      - build_docs:
+          requires:
+            - lint_and_test 

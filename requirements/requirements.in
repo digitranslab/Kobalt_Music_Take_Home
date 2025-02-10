@@ -1,0 +1,4 @@
+typing-extensions==4.8.0
+requests==2.31.0
+IPython==8.18.1
+urllib3<1.27,>=1.25.4

@@ -1,0 +1,1 @@
+# Define outputs for S3 resources if needed 
